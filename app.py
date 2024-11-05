@@ -1,5 +1,4 @@
-# Install required libraries
-!pip install requests gradio
+
 
 import requests
 import gradio as gr

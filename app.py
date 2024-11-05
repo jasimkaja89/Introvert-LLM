@@ -1,12 +1,11 @@
-
-
+import os
 import requests
 import gradio as gr
 import random
 
-# Define the Hugging Face API URL for Falcon-7B-Instruct and your API key
+# Define the Hugging Face API URL for Falcon-7B-Instruct and retrieve the API key from the environment
 API_URL = "https://api-inference.huggingface.co/models/tiiuae/falcon-7b-instruct"
-API_KEY = "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"  # Replace with your actual Hugging Face API key
+API_KEY = os.getenv("HUGGINGFACE_API_KEY")
 
 # Define the fixed question
 QUESTION = "Create a creative advertisement about a new solution to the storrowing problem."
@@ -21,7 +20,7 @@ introvert_prompts = [
     f"{QUESTION} Propose a gentle, introspective advertisement idea.",
     f"{QUESTION} Craft a soothing and thoughtful promotional message.",
     f"{QUESTION} Design an understated, reflective ad."
-] * 50  # Replicates to create a pool of 400 options when shuffled
+] * 50
 
 extrovert_prompts = [
     f"{QUESTION} Provide a lively and high-energy message.",
@@ -32,7 +31,7 @@ extrovert_prompts = [
     f"{QUESTION} Present an engaging, energetic advertisement.",
     f"{QUESTION} Craft an upbeat, extroverted promotional message.",
     f"{QUESTION} Design a compelling, lively advertisement concept."
-] * 50  # Replicates to create a pool of 400 options when shuffled
+] * 50
 
 # Function to query the Hugging Face API with randomness for diversity
 def query_huggingface(personality):
@@ -54,37 +53,21 @@ def query_huggingface(personality):
     else:
         return f"Error: {response.status_code}, {response.text}"
 
-# Create the Gradio interface for Introvert responses
-def create_introvert_interface():
-    introvert_iface = gr.Interface(
-        fn=lambda _: query_huggingface("Introvert"),
-        inputs=None,
+# Combined Gradio interface with a radio button to select personality
+def create_combined_interface():
+    combined_iface = gr.Interface(
+        fn=lambda personality: query_huggingface(personality),
+        inputs=gr.Radio(choices=["Introvert", "Extrovert"], label="Select Personality"),
         outputs="text",
-        title="Introvert Profile",
-        description="This interface provides an introverted, thoughtful response to the fixed question below.\n\n"
-                    + QUESTION
+        title="Personality-Based Advertisement Generator",
+        description="Select either Introvert or Extrovert to see a unique response to the question below.\n\n" + QUESTION
     )
-    return introvert_iface
+    return combined_iface
 
-# Create the Gradio interface for Extrovert responses
-def create_extrovert_interface():
-    extrovert_iface = gr.Interface(
-        fn=lambda _: query_huggingface("Extrovert"),
-        inputs=None,
-        outputs="text",
-        title="Extrovert Profile",
-        description="This interface provides an extroverted, lively response to the fixed question below.\n\n"
-                    + QUESTION
-    )
-    return extrovert_iface
+# Launch the combined interface on a single port
+print("Launching Combined Interface...")
+combined_interface = create_combined_interface()
+combined_interface.launch(server_name="0.0.0.0", server_port=7863)
 
-# Launch the interfaces separately for two distinct links
-print("Launching Introvert Interface...")
-introvert_interface = create_introvert_interface()
-introvert_interface.launch(server_name="0.0.0.0", server_port=7861)
-
-print("Launching Extrovert Interface...")
-extrovert_interface = create_extrovert_interface()
-extrovert_interface.launch(server_name="0.0.0.0", server_port=7862)
 
 
